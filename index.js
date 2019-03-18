@@ -136,9 +136,23 @@ class CanvasBarrage { // 渲染canvas弹幕的类
   }
 }
 
-let canvasBarrage = new CanvasBarrage(canvas, video, {
-  data
-});
+let canvasBarrage;
+
+const socket = new WebSocket('ws://localhost:3000');  // 创建websocket链接
+// 监听消息
+socket.onopen = () => {
+  socket.onmessage = e => {
+    let message = JSON.parse(e.data);
+    if (message.type === 'INIT') {
+      canvasBarrage = new CanvasBarrage(canvas, video, {
+        data: message.data
+      });
+    }
+    if (message.type === 'ADD') {
+      canvasBarrage.add(message.data)
+    }
+  }
+}
 
 video.addEventListener('play', () => {
   canvasBarrage.isPaused = false;
@@ -160,7 +174,8 @@ $('#add').addEventListener('click', () => {
     color,
     fontSize
   };
-  canvasBarrage.add(obj); // 添加弹幕，实现添加功能
+  socket.send(JSON.stringify(obj));  // 发给服务器
+  // canvasBarrage.add(obj); // 添加弹幕，实现添加功能
 });
 // 拖拽视频进度条，显示当时弹幕
 video.addEventListener('seeked', () => {
